@@ -226,20 +226,19 @@ def computeAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120
 
     return tuning_curves
 
-def findHDCells(tuning_curves):
-    """
-        Peak firing rate larger than 1
-        and Rayleigh test p<0.001 & z > 100
-    """
-    cond1 = tuning_curves.max()>1.0
-    
-    from pycircstat.tests import rayleigh
-    stat = pd.DataFrame(index = tuning_curves.columns, columns = ['pval', 'z'])
-    for k in tuning_curves:
-        stat.loc[k] = rayleigh(tuning_curves[k].index.values, tuning_curves[k].values)
-    cond2 = np.logical_and(stat['pval']<0.001,stat['z']>20)
-    tokeep = np.where(np.logical_and(cond1, cond2))[0]
-    return tokeep, stat
+def findHDCells(tuning_curves, z = 50, p = 0.0001 , m = 1):
+	"""
+		Peak firing rate larger than 1
+		and Rayleigh test p<0.001 & z > 100
+	"""
+	cond1 = tuning_curves.max()>m
+	from pycircstat.tests import rayleigh
+	stat = pd.DataFrame(index = tuning_curves.columns, columns = ['pval', 'z'])
+	for k in tuning_curves:
+		stat.loc[k] = rayleigh(tuning_curves[k].index.values, tuning_curves[k].values)
+	cond2 = np.logical_and(stat['pval']<p,stat['z']>z)
+	tokeep = stat.index.values[np.where(np.logical_and(cond1, cond2))[0]]
+	return tokeep, stat
 
 def decodeHD(tuning_curves, spikes, ep, px, bin_size = 200):
     """
@@ -510,7 +509,40 @@ def computeSpeedTuningCurves(spikes, position, ep, bin_size = 0.1, nb_bins = 20,
         speed_curves[k] = spike_count/bin_size
 
     return speed_curves
+"""
+Opto
+"""
+def computeRasterOpto(spikes, opto_ep, bin_size = 100):
+	"""
+	Bin size in ms
+	edge in ms
+	"""
+	rasters = {}
+	frates = {}
 
+	# assuming all opto stim are the same for a session
+	stim_duration = opto_ep.loc[0,'end'] - opto_ep.loc[0,'start']
+	
+	bins = np.arange(0, stim_duration + 2*stim_duration + bin_size*1000, bin_size*1000)
+
+	for n in spikes.keys():
+		rasters[n] = []
+		r = []
+		for e in opto_ep.index:
+			ep = nts.IntervalSet(start = opto_ep.loc[e,'start'] - stim_duration,
+								end = opto_ep.loc[e,'end'] + stim_duration)
+			spk = spikes[n].restrict(ep)
+			tmp = pd.Series(index = spk.index.values - ep.loc[0,'start'], data = e)
+			rasters[n].append(tmp)
+			count, _ = np.histogram(tmp.index.values, bins)
+			r.append(count)
+		r = np.array(r)
+		frates[n] = pd.Series(index = bins[0:-1]/1000, data = r.mean(0))
+		rasters[n] = pd.concat(rasters[n])		
+
+	frates = pd.concat(frates, 1)
+	frates = nts.TsdFrame(t = frates.index.values, d = frates.values, time_units = 'ms')
+	return frates, rasters, bins, stim_duration
 """
 Filters
 """

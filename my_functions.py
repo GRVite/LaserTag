@@ -316,7 +316,8 @@ class ephysplots:
         plt.show()
         plt.tight_layout()
         plt.savefig('{}{}{}'.format(dir2save,  '/' + session + "_matrixb_" + label , '.pdf'))    
-        
+
+
     def raster(raster_list,  stimduration, neurons_sel, session, dir2save,
              intensity_label = "High intensity", units = 's', binsize = 1, \
                  ylabel = "Firing Rate", linesize = 0.5, \

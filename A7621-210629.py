@@ -13,12 +13,17 @@ from my_functions import *
 import neuroseries as nts
 import pandas as pd
 import pickle
+import os
+from matplotlib.gridspec import GridSpecFromSubplotSpec
 
 
 # def analysis(data_directory_load, dir2save_plots, ID, session):
-data_directory_load = '/Users/vite/OneDrive - McGill University/PeyracheLab/Data/A7621/A7621-210617/'
-# dir2save_plots = '/Volumes/LaCie/Timaios/Kilosorted/A4404/A4404-200606/A4404-200606' + '/my_data/plots'
-session = 'A7621-210617'
+# data_directory_load = '/Users/vite/OneDrive - McGill University/PeyracheLab/Data/A7621/A7621-210617/'
+data_directory_load = OneD+'/my_data'
+dir2save_plots = data_directory_load + '/plots'
+if not os.path.exists(dir2save_plots):
+    os.mkdir(dir2save_plots)
+session = 'A7621-210622'
 # load data
 spikes = pickle.load(open(data_directory_load + '/spikes.pickle', 'rb'))
 shank = pickle.load(open(data_directory_load  + '/shank.pickle', 'rb'))
@@ -35,27 +40,26 @@ plt.figure()
 start_w = wake_ep.as_units('s').start.values[0]
 plt.hlines(4, start_w, wake_ep.as_units('s').end.values)
 for s in range(len(stim_ep)):
-    begin = stim_ep.as_units('s').start[s] + start_w
-    end = stim_ep.as_units('s').end[s] + start_w
+    begin = stim_ep.as_units('s').start[s] 
+    end = stim_ep.as_units('s').end[s] 
     plt.hlines(s+1, begin, end, 'r')
 plt.show()
 
-
-if True:
+flag = False
+if flag:
     start_wake = wake_ep.start.values[0]
     opto_ep = opto_ep+start_wake
     start= stim_ep.start.values +start_wake
     end = stim_ep.end.values +start_wake
     stim_ep = nts.IntervalSet(start = start, 
                               end = end)
-plt.figure()
-
-plt.hlines(4, start_w, wake_ep.as_units('s').end.values)
-for s in range(len(stim_ep)):
-    begin = stim_ep.as_units('s').start[s] 
-    end = stim_ep.as_units('s').end[s]
-    plt.hlines(s+1, begin, end, 'r')
-plt.show()
+    plt.figure()
+    plt.hlines(4, start_w, wake_ep.as_units('s').end.values)
+    for s in range(len(stim_ep)):
+        begin = stim_ep.as_units('s').start[s] 
+        end = stim_ep.as_units('s').end[s]
+        plt.hlines(s+1, begin, end, 'r')
+    plt.show()
 
 """
 Section A. Comparison of different intensities based on mean firing rate
@@ -67,7 +71,7 @@ baseline = nts.IntervalSet(start = opto_ep.start[0]-mins*60*1000*1000 - 1000000,
                          end = opto_ep.start[0]-1000000)
 # Compute the mean firing rate of the neurons for the baseline interval
 df_firnrate = computeMeanFiringRate(spikes, [baseline, 
-                                  stim_ep.loc[[0]], stim_ep.loc[[2]]], 
+                                  stim_ep.loc[[0]], stim_ep.loc[[1]]], 
                                   ["baseline", "low","high"])
 #necesitas modificarlo para cualquier numero de stims
 # Type a string to distinguish the plots of this section when saving
@@ -112,24 +116,155 @@ Section B. Raster plots
 """
 
 # Select the time interval of the desired stimulation epoch  
-intensity = 'H'
-interval = stim_ep.loc[[0]]
-pre = 2*6e7 #time before the stimulation in us
-post = 4*6e7 #time since the stimulation in us
+intensity = 'High'
+interval = stim_ep.loc[[2]]
+pre = 1*6e7 #time before the stimulation in us
+post = 2*6e7 #time since the stimulation in us
 # Use this method from the class raster to get the data for the raster plot 
-raster_list = raster.gendata(neurons_sel, pre, post, [stim_ep['start'][0]])
+raster_list = raster.gendata(neurons_sel, pre, post, [stim_ep['start'][2]])
 # Get the total duration of the stimulation
 stimduration = interval.tot_length('s')
 ephysplots.raster(raster_list,  stimduration, neurons_sel.keys(), session, dir2save_plots, intensity_label=intensity, binsize = 10)
+
+#
+# Select the time interval of the desired stimulation epoch  
+
+# Get the total duration of the stimulation
+stimduration = interval.tot_length('s')
+frates, rasters, bins, stim_duration = computeRasterOpto(spikes, stim_ep, 1000)
+ephysplots.raster(raster_list,  1, neurons_sel.keys(), session, dir2save_plots, intensity_label=intensity, binsize = 10)
+
+plt.figure()
+# plt.eventplot(rasters[1].index.values)
+
+
+
+gendataU(spikes[0], sleep_ep.loc[[1]], opto_ep)
+
+import matplotlib.patches as patches
+rasters_dic = test
+stimduration = 100000
+
+rasters_dic = test
+stimduration = 100
+rasters_opto(raster_list,  stimduration, session, dir2save,
+             intensity_label = "High intensity", units = 'ms', \
+                 ylabel = "Firing Rate", linesize = 2, \
+                     colorstim = "lightcyan"):
+
+if units == 'ms':
+    scale = 1000
+elif units == 's':
+    scale = 1000000
+else:
+    print("wrong units input")    
+cols = 3
+rows = round(len(rasters_dic.keys())/cols)
+i=0
+fig, axes = plt.subplots(rows,cols, sharey = True, sharex = True)
+for r in range(rows):
+    for c in range(cols):
+        data = [item/scale for item in rasters_dic[i]] 
+        axes[r][c].eventplot(data, linelengths = linesize, color='black')
+        rect = patches.Rectangle((stimduration, 0), stimduration, height, facecolor = colorstim, alpha = 0.5)
+        axes[r][c].add_patch(rect)
+        i+=1
+fig.suptitle(session)
+fig.text(0.5, 0.04, 'time', ha='center')
+fig.text(0.04, 0.5, 'trials', va='center', rotation='vertical')
+plt.savefig(os.path.join(dir2save, "rasters_opto")
+
+#Hist
+units = 'ms'
+binsize = 1   
+nbins = 30
+
+if units == 'ms':
+    scale = 1000
+elif units == 's':
+    scale = 1000000
+else:
+    print("wrong units input")
+i=0
+fig, axes = plt.subplots(rows,cols, sharey = True, sharex = True)
+for r in range(raws):
+    for c in range(cols):
+        data =rasters_dic[i]
+        data = [item/scale for item in data]
+        array_hist = np.concatenate(data).ravel()
+        axes[r][c].hist(data, bins = nbins)
+        i+=1     
+
+
+
+i = 0
+cols = 3
+rows = round(len(rasters_dic.keys())/cols)
+nbins = 40
+fig, axes = plt.subplots(rows,cols)
+for r in range(raws+1):
+    for c in range(cols):
+        print(i)
+        data = rasters_dic[i]
+        data = np.concatenate(data).ravel()
+        data = [item/scale for item in data]
+        axes[r][c].hist(data, bins = nbins, color = colorctrl)
+        i+=1
+
+i=11
+fig, ax = plt.subplots()
+data = rasters_dic[i]
+data = np.concatenate(data).ravel()
+data = [item/scale for item in data]
+# nbins = int(array_hist[-1]*2/binsize)
+ax.hist(data, bins = 40, color = colorctrl)
+
+        
+        
+        
+        if units == 'ms':
+            scale = 1000
+        elif units == 's':
+            scale = 1000000
+        else:
+            print("wrong units input")
+        
+        # Scale the raster data based on the units selected
+        raster_list= [i/scale for i in raster_list]    
+        # Create an array for your histogram
+        ç
+        # Generate the bins for this array
+        nbins = int(array_hist[-1]*2/binsize)
+        fig, (ax1,ax2) = plt.subplots(2, 1, sharex = True, figsize = [16,12])
+        ax1.eventplot(raster_list, linelengths = linesize, color='black')
+        left, bottom, height = (0, 0.5, len(raster_list))
+        rect = plt.Rectangle((left, bottom), stimduration, height,
+                             facecolor = colorstim, alpha = 0.5)
+        ax1.add_patch(rect)
+        ax1.set_ylabel('Neurons')
+        ax1.set_yticks([*range(len(neurons_sel))])
+        ax1.set_yticklabels( {v:k for k,v in enumerate(neurons_sel)} ) 
+        ax1.legend(["ChR2"])
+        ax1.set_frame_on(False)
+        data, edges = np.histogram(array_hist, nbins)
+        ax2.hist(array_hist, bins = nbins, color = colorctrl)
+        ax2.plot([0, stimduration],[data.max(), data.max()], linewidth = 7, 
+                 color = colorstim )
+        ax2.set_xlabel("{}{}".format('Time (',units+')'))
+        ax2.set_ylabel(ylabel)
+        ax2.set_frame_on(False)
+        plt.show()
+        plt.suptitle(session + " " + intensity_label)
+        plt.savefig('{}{}{}'.format(dir2save,  '/' + session + "_raster_neuronselected", '.pdf'))   
 
 
 """
 Section C. Matrix
 """
-pre_stim_m = 2*60*1000*1000 #time before the stimulation in us
-post_stim_m = 4*60*1000*1000 #It must be the double of pre
+pre_stim_m = 1*60*1000*1000 #time before the stimulation in us
+post_stim_m = 2*60*1000*1000 #It must be the double of pre
 step = 10*1000*1000
-label_epochs = ["Low", "Med", "High"]
+label_epochs = ["Low", "High"]
 
 for lap, label in zip ([*stim_ep['start']], label_epochs):
     #determine the mean firing rate previos to the stimulation epoch per neuron
