@@ -25,7 +25,7 @@ A. LOAD DATA
 
 # def analysis(data_directory_load, dir2save_plots, ID, session):
 # data_directory_load = '/Users/vite/navigation_system/Data/A6100/A6100-201026'
-data_directory_load = '/Users/vite/OneDrive - McGill University/PeyracheLab/Data/A7701/A7701-210216/my_data'
+data_directory_load = '/Users/vite/OneDrive - McGill University/PeyracheLab/Data/A7707/A7707-210613/my_data'
 # data_directory_load = OneD
 # load data
 spikes = pickle.load(open(data_directory_load + '/spikes.pickle', 'rb'))
@@ -140,8 +140,7 @@ else:
             stop  = numNeurons
 
 #store data
-for string, objct in zip(['spikes_HDCells', 'tuning_curves','tuning_curves_HDcells',\
-              'wake_ep'],
+for string, objct in zip(['spikes_HDCells', 'tuning_curves','tuning_curves_HDcells'],
               [neurons_sel, tuning_curves, tuning_curves_sel]):
     #pickle it!          
     with open(os.path.join(data_directory_load, string + '.pickle'), 'wb') as handle:

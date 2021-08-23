@@ -25,7 +25,7 @@ from shutil import copyfile
 rootDir =  '/Volumes/Seagate/Kraken/K2'
 # Select animal ID and session
 ID = 'A7621'
-session = 'A7621-210629'
+session = 'A7621-210630'
 #One drive path
 OneD = '/Users/vite/OneDrive - McGill University/PeyracheLab/Data' + '/' + ID + '/' + session 
 
@@ -53,8 +53,8 @@ events.sort()
 position = loadPosition(data_directory, events, episodes, n_ttl_channels = 2, optitrack_ch = 0)
 optoloc = 2
 opto_ep = loadOptoEp(data_directory, epoch=optoloc, n_channels=2, channel=1)
-
-stim_ep = opto_ep.merge_close_intervals(100000000)
+plt.plot(opto_ep, '.')
+stim_ep = opto_ep.merge_close_intervals(10000)
 
 
 # position.index[0], stim_ep.loc[0].start, stim_ep.loc[1].start, stim_ep.loc[2].start,  
@@ -72,7 +72,7 @@ stim_ep = opto_ep.merge_close_intervals(100000000)
 os.mkdir(data_directory + '/my_data')
 os.mkdir(OneD)
 OneD = OneD + '/my_data'
-os.mkdir(One_D)
+os.mkdir(OneD)
 #copy XML
 copyfile(data_directory + '/' + session + '.xml', OneD + '/' + session + '.xml')
 # Get the time interval of the wake epoch

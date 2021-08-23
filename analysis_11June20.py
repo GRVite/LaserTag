@@ -67,7 +67,7 @@ baseline = nts.IntervalSet(start = opto_ep.start[0]-mins*60*1000*1000 - 1000000,
                          end = opto_ep.start[0]-1000000)
 # Compute the mean firing rate of the neurons for the baseline interval
 df_firnrate = computeMeanFiringRate(spikes, [baseline, 
-                                  stim_ep.loc[[0]], stim_ep.loc[[2]]], 
+                                  stim_ep.loc[[0]], stim_ep.loc[[0]]], 
                                   ["baseline", "low","high"])
 #necesitas modificarlo para cualquier numero de stims
 # Type a string to distinguish the plots of this section when saving
